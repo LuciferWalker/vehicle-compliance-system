@@ -1,0 +1,65 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("staff")
+  createdAt    DateTime @default(now())
+}
+
+model Citizen {
+  id          String    @id @default(uuid())
+  name        String
+  email       String?   @unique // Optional email
+  phoneNumber String?   @unique // Optional phone
+  createdAt   DateTime  @default(now())
+  Vehicles    Vehicle[] // 1-to-Many: A citizen owns vehicles
+}
+
+model Vehicle {
+  id           String   @id @default(uuid())
+  licensePlate String
+  vin          String   @unique
+  createdAt    DateTime @default(now())
+
+  citizenId String
+  Citizen   Citizen @relation(fields: [citizenId], references: [id])
+
+  Compliance Compliance?
+  Documents  Document[]
+}
+
+model Compliance {
+  id                String   @id @default(uuid())
+  insuranceValid    Boolean  @default(false)
+  registrationValid Boolean  @default(false)
+  lastChecked       DateTime @default(now())
+
+  vehicleId String  @unique
+  Vehicle   Vehicle @relation(fields: [vehicleId], references: [id])
+}
+
+model Document {
+  id          String   @id @default(uuid())
+  documentUrl String
+  type        String
+  uploadedAt  DateTime @default(now())
+
+  vehicleId String
+  Vehicle   Vehicle @relation(fields: [vehicleId], references: [id])
+}
