@@ -33,7 +33,7 @@ model Citizen {
 
 model Vehicle {
   id           String   @id @default(uuid())
-  licensePlate String
+  licensePlate String   @unique
   vin          String   @unique
   createdAt    DateTime @default(now())
 
