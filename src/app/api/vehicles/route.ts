@@ -92,3 +92,109 @@ export async function POST(request: Request){
 
     }
 }
+
+export async function PUT(request: Request){
+    try{
+
+        // Parse the request body
+        const data = await request.json();
+
+        // Validate required fields
+        if(!data.id){
+            return new Response(JSON.stringify({error:'Vehicle ID is required'}),{
+                status:400, headers:{'Content-Type':'application/json'}
+            });
+        }
+
+        //Build the update object dynamically
+        const updateData: any={};
+        if(data.licensePlate){
+            updateData.licensePlate = data.licensePlate;
+        }
+        if(data.vin){
+            updateData.vin = data.vin;
+        }
+        if(data.citizenId){
+            updateData.citizenId = data.citizenId
+        }
+
+        //Handle empty PUT requests
+        if(Object.keys(updateData).length === 0){
+            return new Response(
+                JSON.stringify({error: "No fields provided for update"}),
+                {
+                    status:400,
+                    headers:{"Content-Type": "application/json"},
+                }
+            );
+        }
+
+        //Update the vehicle record
+        const updatedVehicle = await prisma.vehicle.update({
+            where:{id:data.id},
+            data:updateData,
+        });
+
+        //Return the updated vehicle
+        return new Response(
+          JSON.stringify(updatedVehicle),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+
+    }catch(error){
+        return new Response(
+          JSON.stringify({ error: "Failed to update vehicle" }),
+          {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+
+    }finally{
+        await prisma.$disconnect();
+    }
+}
+
+// export async function DELETE(request: Request){
+
+//     try{
+
+//     //Parse the request
+//     const data = await request.json();
+
+//     if(!data.id){
+//         return new Response(JSON.stringify({error: "No Vehicle ID provided"}), {
+//             status:400,
+//             headers:{"Content-Type":"application/json"}
+//         });
+//     }
+
+//     // Delete the vehicle record
+//     const deletedVehicle = await prisma.vehicle.delete({
+//         where:{id:data.id}
+//     });
+
+//     return new Response(JSON.stringify({message:"Vehicle deleted successfully"}),{
+//         status:200,
+//         headers:{'Content-Type':'application/json'}
+//     });
+
+// } catch(error){
+    
+//     console.error(error);
+
+//     return new Response(
+//        JSON.stringify({ message: "Error in deleting the vehicle" }),
+//        {
+//          status: 500,
+//          headers: { "Content-Type": "application/json" },
+//        }
+//      );
+// } finally{
+//     await prisma.$disconnect();
+// }
+
+// }
