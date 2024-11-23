@@ -9,7 +9,15 @@ export async function GET(request: Request) {
         const {searchParams} = new URL(request.url);
         const vehicleId = searchParams.get('id');
 
-        if(vehicleId){
+        if(!vehicleId){
+            return new Response(
+              JSON.stringify({ error: "Vehicle ID is required" }),
+              {
+                status: 400,
+                headers: { "Content-Type": "application/json" },
+              }
+            );
+        }
             // Fetch a specific vehicle by ID
 
             const vehicle = await prisma.vehicle.findUnique({
@@ -28,7 +36,7 @@ export async function GET(request: Request) {
                 status:200,
                 headers: {'Content-Type': 'application/json'},
             });
-        }
+            
     } catch(error){
         console.error('Error fetching vehicles:', error);
         return new Response(JSON.stringify({error: 'Failed to fetch vehicle'}), {
