@@ -1,116 +1,68 @@
-import { PrismaClient } from "@prisma/client";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { v4 as uuidv4 } from "uuid";
+import "dotenv/config";
 
-const prisma = new PrismaClient();
+const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+const s3BucketName = process.env.S3_BUCKET_NAME;
 
-export async function GET(request: Request) {
-  try {
-    // Extract licensePlate from query parameters
-    const { searchParams } = new URL(request.url);
-    const licensePlate = searchParams.get("licensePlate");
-
-    if (!licensePlate) {
-      return new Response(
-        JSON.stringify({ error: "License plate is required" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    const vehicle = await prisma.vehicle.findUnique({
-      where: { licensePlate },
-      include: { Compliance: true },
-    });
-
-    if (!vehicle) {
-      return new Response(JSON.stringify({ error: "Vehicle not found" }), {
-        status: 404,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    return new Response(JSON.stringify({ vehicle }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (error) {
-    return new Response(
-      JSON.stringify({ error: "Failed to fetch compliance data" }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-  } finally {
-    await prisma.$disconnect();
-  }
+if (!accessKeyId || !secretAccessKey || !s3BucketName) {
+  throw new Error("Missing data in .env file");
 }
 
-export async function PUT(request: Request) {
-  try {
-    //Parse the request
-    const data = await request.json();
+//Initializaing S3 client
+const s3 = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId,
+    secretAccessKey,
+  },
+});
 
-    if (!data.vehicleId) {
-      return new Response(JSON.stringify({ error: "Vehicle ID is required" }), {
+export async function POST(request: Request) {
+  try {
+    //Parse the request to get the image file
+    const formData = await request.formData();
+    const file = formData.get("file") as File;
+
+    // Validate file existence
+    if (!file) {
+      return new Response(JSON.stringify({ error: "File is required" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
     }
 
-    const compliance = await prisma.compliance.findUnique({
-      where: { vehicleId: data.vehicleId },
-    });
+    //Generating a unique name for every uploaded file
+    const fileKey = `${uuidv4()}_${file.name}`;
 
-    if (!compliance) {
-      return new Response(
-        JSON.stringify({
-          error: "Compliance record not found for the vehicle",
-        }),
-        {
-          status: 404,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
+    //Preparing the upload
+    const uploadParams = {
+      Bucket: s3BucketName,
+      Key: fileKey,
+      Body: Buffer.from(await file.arrayBuffer()), //Converts the file into binary format
+      ContentType: file.type,
+    };
 
-    if (data.registrationValid == false && data.insuranceValid == true) {
-      return new Response(
-        JSON.stringify({
-          error: "Insurance cannot be valid for unregistered vehicles",
-        }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
+    //Uploading to S3
+    const command = new PutObjectCommand(uploadParams);
+    await s3.send(command);
 
-    //Update the compliance record
-    const updatedCompliance = await prisma.compliance.update({
-      where: { vehicleId: data.vehicleId },
-      data: {
-        insuranceValid: data.insuranceValid,
-        registrationValid: data.registrationValid,
-      },
-    });
-
-    //Return the updated record
-    return new Response(JSON.stringify(updatedCompliance), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (error) {
-    console.error(error);
     return new Response(
-      JSON.stringify({ error: "Error updating the compliance" }),
+      JSON.stringify({
+        message: "Image uploaded successfully",
+        filekey: fileKey,
+        url: `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`,
+      }),
       {
-        status: 500,
+        status: 200,
         headers: { "Content-Type": "application/json" },
       }
     );
-  } finally {
-    await prisma.$disconnect();
+  } catch (error) {
+    return new Response(JSON.stringify({ error: "Failed to upload image" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }
