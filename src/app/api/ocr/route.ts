@@ -86,8 +86,6 @@ export async function POST(request: Request) {
           matchesAnyStateRegex(detectedText)
       );
 
-      console.log(detectedTextObjects)
-
     //Process WORDs now
     const validWord = detectedTextObjects
       .filter((detectedTextObject) => detectedTextObject.Type === "WORD")
