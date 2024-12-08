@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     return new Response(
       JSON.stringify({
         message: "Image uploaded successfully",
-        filekey: fileKey,
+        fileKey: fileKey,
         url: `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`,
       }),
       {
