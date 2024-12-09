@@ -6,6 +6,16 @@ import {verifyToken} from '../app/utils/auth';
 
 export function middleware(request: NextRequest){
     const token = request.headers.get('Authorization')?.split(' ')[1];
+
+    const publicRoutes = ["/api/login"];
+    if (
+      publicRoutes.some((publicRoute) =>
+        request.nextUrl.pathname.startsWith(publicRoute)
+      )
+    ) {
+      return NextResponse.next();
+    }
+
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
