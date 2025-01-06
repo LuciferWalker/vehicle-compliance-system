@@ -1,3 +1,5 @@
+import {sendEmail} from "../../utils/email";
+
 export async function POST(request: Request) {
   try {
     //Parse the request
@@ -51,7 +53,7 @@ export async function POST(request: Request) {
 
     const { licensePlate } = await ocrResponse.json();
 
-    console.log(licensePlate)
+    console.log(licensePlate);
 
     if (!licensePlate) {
       return new Response(
@@ -59,7 +61,7 @@ export async function POST(request: Request) {
         { status: 404, headers: { "Content-Type": "application/json" } }
       );
     }
-
+    console.log("before");
     // Step 3: Call the Compliance GET API
     const complianceResponse = await fetch(
       `${process.env.BASE_URL}/api/compliances?licensePlate=${licensePlate}`,
@@ -67,6 +69,7 @@ export async function POST(request: Request) {
         method: "GET",
       }
     );
+    console.log("after")
 
     if (!complianceResponse.ok) {
       const errorData = await complianceResponse.json();
@@ -79,7 +82,16 @@ export async function POST(request: Request) {
       );
     }
 
+
     const complianceData = await complianceResponse.json();
+
+
+    // Send email notification after compliance check
+    await sendEmail(
+      "preetpatel1616@gmail.com",
+      "Compliance Check Completed",
+      `The compliance check for vehicle ${licensePlate} is completed.`
+    );
 
     // Final Response
     return new Response(JSON.stringify({ complianceData }), {

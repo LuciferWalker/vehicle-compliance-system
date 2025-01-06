@@ -31,9 +31,19 @@ export async function GET(request: Request){
         });
       }
 
+         if (!vehicle.Compliance) {
+           console.error("Compliance record missing for vehicle:", vehicle.id);
+           return new Response(
+             JSON.stringify({
+               error: "Compliance data missing for the vehicle",
+             }),
+             { status: 404, headers: { "Content-Type": "application/json" } }
+           );
+         }
+
       //Update the lastChecked field in the database
       await prisma.compliance.update({
-        where: { id: vehicle.id },
+        where: { id: vehicle.Compliance.id },
         data: { lastChecked: new Date() },
       });
 
