@@ -54,4 +54,3 @@ jobs:
       - name: Deploy to Elastic Beanstalk
         run: |
           npx eb deploy --staged
-#avai 
