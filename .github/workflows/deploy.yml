@@ -23,9 +23,17 @@ jobs:
         with:
           node-version: 18
 
+      - name: Prepare Environment
+        run: |
+          rm -rf node_modules
+          npm cache clean --force
+
       # Install dependencies
       - name: Install Dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
+
+      - name: Update esbuild
+        run: npm install esbuild@latest
 
       # Configure AWS Credentials
       - name: Configure AWS Credentials
@@ -52,5 +60,8 @@ jobs:
 
       # Deploy to Elastic Beanstalk
       - name: Deploy to Elastic Beanstalk
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
           npx eb deploy --staged
