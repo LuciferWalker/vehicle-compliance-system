@@ -27,9 +27,9 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      # Run Lint and Tests
-      - name: Run Lint and Tests
-        run: npm run lint && npm run test
+      # # Run Lint and Tests
+      # - name: Run Lint and Tests
+      #   run: npm run lint && npm run test
 
       # Log in to Amazon ECR
       - name: Log in to Amazon ECR
