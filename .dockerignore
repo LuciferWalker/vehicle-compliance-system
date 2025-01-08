@@ -1,5 +1,4 @@
-node_modules
-dist
+.next
+.git
+.github
 Dockerfile
-docker-compose.yml
-.env
