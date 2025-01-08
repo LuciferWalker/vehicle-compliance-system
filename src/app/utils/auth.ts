@@ -1,4 +1,4 @@
-import { User } from '@prisma/client';
+// import { User } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 
 // Defining the structure of the payload returned by jwt.verify

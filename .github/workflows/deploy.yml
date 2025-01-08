@@ -1,0 +1,56 @@
+name: CI/CD for Vehicle Compliance System
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the code
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      # Install dependencies
+      - name: Install Dependencies
+        run: npm install
+
+      # Run Lint and Tests
+      - name: Run Lint and Tests
+        run: npm run lint && npm run test
+
+      # Log in to Amazon ECR
+      - name: Log in to Amazon ECR
+        id: ecr-login
+        run: |
+          aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 872515257507.dkr.ecr.us-east-2.amazonaws.com
+
+      # Build Docker Image
+      - name: Build Docker Image
+        run: docker build -t vehicle-compliance-system .
+
+      # Tag and Push Docker Image
+      - name: Push Docker Image
+        run: |
+          docker tag vehicle-compliance-system:latest 872515257507.dkr.ecr.us-east-2.amazonaws.com/vehicle-compliance-system:latest
+          docker push 872515257507.dkr.ecr.us-east-2.amazonaws.com/vehicle-compliance-system:latest
+
+      # Deploy to Elastic Beanstalk
+      - name: Deploy to Elastic Beanstalk
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          npx eb deploy --staged
