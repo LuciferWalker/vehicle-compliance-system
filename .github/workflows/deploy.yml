@@ -3,10 +3,10 @@ name: CI/CD for Vehicle Compliance System
 on:
   push:
     branches:
-      - main
+      - develop
   pull_request:
     branches:
-      - main
+      - develop
 
 jobs:
   build-and-deploy:
